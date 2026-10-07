@@ -175,6 +175,65 @@ Time.previous_business_day(saturday) #=> "Fri Aug 8, 18:00:00, 2014"
 Time.previous_business_day(monday) #=> "Mon Aug 11, 18:00:00, 2014"
 ```
 
+## Work calendars
+
+When the global config is not flexible enough, you can build a
+BusinessTime::WorkCalendar and pass it around explicitly. A work calendar
+supports several work segments per day (e.g. a lunch break), segments that
+run past midnight, and schedule versions that take effect on a given date:
+
+```ruby
+calendar = BusinessTime::WorkCalendar.new(
+  time_zone: "America/New_York",
+  schedules: [
+    { starts_on: Date.new(2024, 1, 1), hours: {
+        mon: [["9:00", "12:00"], ["13:00", "17:00"]] },         # lunch break
+        fri: [["9:00", "17:00"], ["20:00", "2:00"]] } },        # night shift into Saturday
+    { starts_on: Date.new(2024, 6, 1), hours: {                 # new schedule from June 1st
+        mon: [["8:00", "12:00"], ["12:30", "16:30"]] } }
+  ],
+  holidays: [Date.new(2024, 7, 4)..Date.new(2024, 7, 5)],       # date ranges allowed
+  extra_workdays: [{ Date.new(2024, 7, 6) => [["10:00", "14:00"]] }]  # temporary opening
+)
+
+calendar.add_business_seconds(time, 3600)
+calendar.subtract_business_seconds(time, 3600)
+calendar.business_time_until(time_a, time_b)   # real elapsed seconds
+calendar.working?(time)
+```
+
+Holidays remove whole dates (including overnight tails landing on them) and
+extra workdays add openings; overlapping segments are merged before any
+duration is computed, so no span of time is ever counted twice. Adding,
+subtracting and business_time_until all share the same interval semantics,
+so adding N business seconds and subtracting them again returns the
+original time.
+
+All arithmetic happens on absolute instants, i.e. durations are real
+elapsed seconds and never wall-clock guesses. Local segment endpoints that
+fall inside a DST transition are converted with an explicit policy:
+
+```ruby
+BusinessTime::WorkCalendar.new(
+  time_zone: "America/New_York",
+  hours: { mon: ["9:00", "17:00"] },
+  dst_policy: { ambiguous: :first,      # repeated local time: first (:first) or second (:last) occurrence
+                gap: :shift_forward }   # missing local time: shift to the next valid time, or :raise
+)
+```
+
+Use the calendar per call or install it as the default for legacy calls:
+
+```ruby
+2.business_hours.after(time, calendar: calendar)
+time_a.business_time_until(time_b, calendar: calendar)
+
+BusinessTime::Config.work_calendar = calendar
+2.business_hours.after(time)  # uses the calendar now
+```
+
+Without a configured calendar everything keeps working exactly as before.
+
 ## Rails generator
 
 ```sh

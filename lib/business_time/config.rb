@@ -101,6 +101,12 @@ module BusinessTime
 
     threadsafe_cattr_accessor :fiscal_month_offset
 
+    # An optional BusinessTime::WorkCalendar used as the default for
+    # business_hours and business_time_until calculations when no
+    # :calendar option is passed. Legacy calls keep using the global
+    # config above when this is nil.
+    threadsafe_cattr_accessor :work_calendar
+
     class << self
       # You can set this yourself, either by the load method below, or
       # by saying

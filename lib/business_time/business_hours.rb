@@ -24,11 +24,17 @@ module BusinessTime
     end
 
     def after(time, options={})
+      if (calendar = options[:calendar] || BusinessTime::Config.work_calendar)
+        return calendar.add_business_seconds(time, @hours * 3600)
+      end
       non_negative_hours? ? calculate_after(time, @hours, options) : calculate_before(time, -@hours, options)
     end
     alias_method :since, :after
 
     def before(time, options={})
+      if (calendar = options[:calendar] || BusinessTime::Config.work_calendar)
+        return calendar.add_business_seconds(time, -@hours * 3600)
+      end
       non_negative_hours? ? calculate_before(time, @hours, options) : calculate_after(time, -@hours, options)
     end
 

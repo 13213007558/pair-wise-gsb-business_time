@@ -140,6 +140,10 @@ module BusinessTime
     end
 
     def business_time_until(to_time, options={})
+      if (calendar = options[:calendar] || BusinessTime::Config.work_calendar)
+        return calendar.business_time_until(self, to_time)
+      end
+
       # Make sure that we will calculate time from A to B "clockwise"
       if self < to_time
         time_a = self

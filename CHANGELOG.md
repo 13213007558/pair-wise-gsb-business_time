@@ -7,6 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com//), and thi
 ## [Unreleased] - TBD
 
 - Add Ruby 4.0 to build matrix ([#238])
+- Add BusinessTime::WorkCalendar: an independently passable work calendar
+  with multiple segments per day, overnight segments, date-effective
+  schedule versions, holiday/temporary-opening date ranges, and an explicit
+  DST conversion policy. Usable via the :calendar option on business_hours
+  and business_time_until, or globally via BusinessTime::Config.work_calendar.
 
 ## [0.13.0] - 2022-06-26
 
