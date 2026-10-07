@@ -39,6 +39,10 @@ module BusinessTime
     end
 
     def calculate_after(time, hours, options={})
+      if (calendar = options[:work_calendar])
+        return calendar.add_work_seconds(time, (hours * 3600).round)
+      end
+
       after_time = Time.roll_forward(time, options)
       # Step through the hours, skipping over non-business hours
       hours.times do
@@ -61,6 +65,10 @@ module BusinessTime
     end
 
     def calculate_before(time, hours, options={})
+      if (calendar = options[:work_calendar])
+        return calendar.subtract_work_seconds(time, (hours * 3600).round)
+      end
+
       before_time = Time.roll_backward(time)
       # Step through the hours, skipping over non-business hours
       hours.times do

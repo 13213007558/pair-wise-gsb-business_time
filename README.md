@@ -175,6 +175,55 @@ Time.previous_business_day(saturday) #=> "Fri Aug 8, 18:00:00, 2014"
 Time.previous_business_day(monday) #=> "Mon Aug 11, 18:00:00, 2014"
 ```
 
+## Work calendars
+
+For schedules that the global configuration cannot express, build a
+`BusinessTime::WorkCalendar` and pass it per call with the
+`:work_calendar` option. The global configuration keeps working for every
+call that does not pass one.
+
+A work calendar supports:
+
+* several work segments per day (e.g. a lunch break)
+* segments that cross midnight (a night shift ending the next day)
+* schedule versions that take effect on a given date
+* holidays and temporary openings as real date ranges
+* explicit DST policies for repeated and missing local times
+
+```ruby
+calendar = BusinessTime::WorkCalendar.new(
+  schedules: [
+    { effective_from: Date.new(2026, 1, 1), weekly: {
+        mon: [["09:00", "12:00"], ["13:00", "17:00"]], # lunch break
+        fri: [["09:00", "17:00"], ["20:00", "02:00"]], # night shift crosses midnight
+    } },
+    { effective_from: Date.new(2026, 10, 10), weekly: {
+        mon: [["09:00", "12:00"], ["13:00", "17:00"]],
+        sat: [["10:00", "14:00"]],                     # new shift plan from Oct 10
+    } },
+  ],
+  holidays: [Date.new(2026, 10, 6)..Date.new(2026, 10, 7)], # date ranges work
+  openings: { Date.new(2026, 10, 11) => [["10:00", "12:00"]] }, # temporary opening
+  timezone: "America/New_York",   # optional; defaults to the system zone
+  dst_ambiguous: :first,          # or :last - repeated local times
+  dst_gap: :shift_forward,        # or :shift_backward / :raise - missing local times
+)
+
+calendar.add_work_seconds(time, 3600)
+calendar.subtract_work_seconds(time, 3600)
+calendar.business_time_until(from, to)
+calendar.segments_on(date)
+
+# or through the usual API:
+3.business_hours.after(time, work_calendar: calendar)
+time.business_time_until(other, work_calendar: calendar)
+time.workday?(work_calendar: calendar)
+```
+
+Overlapping segments are merged before anything is counted, and all
+arithmetic uses real elapsed seconds (never wall-clock duration), so adding
+N work seconds and subtracting them again returns to the original moment.
+
 ## Rails generator
 
 ```sh

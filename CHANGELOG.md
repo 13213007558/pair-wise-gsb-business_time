@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com//), and thi
 
 ## [Unreleased] - TBD
 
+- Add BusinessTime::WorkCalendar: an independently passable work calendar
+  supporting multiple segments per day, cross-midnight shifts, date-effective
+  schedule versions, holiday/opening date ranges, and explicit DST policies.
+  Usable via the `:work_calendar` option on the existing API.
 - Add Ruby 4.0 to build matrix ([#238])
 
 ## [0.13.0] - 2022-06-26

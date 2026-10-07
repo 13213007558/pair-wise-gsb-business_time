@@ -4,7 +4,13 @@ module BusinessTime
     # this time falls outside of normal business hours.
     # holidays option allows you to pass in a different Array of holiday dates on
     # each call vs the BusinessTime::Config.holidays which is always static.
+    # work_calendar option delegates to an independently passed
+    # BusinessTime::WorkCalendar instead of the global configuration.
     def workday?(options={})
+      if (calendar = options[:work_calendar])
+        return calendar.workday?(to_date)
+      end
+
       weekday? &&
         !BusinessTime::Config.holidays.include?(to_date) &&
         !to_array_of_dates(options[:holidays]).include?(to_date)
@@ -58,6 +64,10 @@ module BusinessTime
       # Rolls forward to the next beginning_of_workday
       # when the time is outside of business hours
       def roll_forward(time, options={})
+        if (calendar = options[:work_calendar])
+          return calendar.roll_forward(time)
+        end
+
         if Time.before_business_hours?(time) || !time.workday?(options)
           next_business_time = Time.beginning_of_workday(time)
         elsif Time.after_business_hours?(time) || Time.end_of_workday(time) == time
@@ -86,6 +96,10 @@ module BusinessTime
       # Rolls backwards to the previous end_of_workday when the time is outside
       # of business hours
       def roll_backward(time, options={})
+        if (calendar = options[:work_calendar])
+          return calendar.roll_backward(time)
+        end
+
         prev_business_time = if (Time.before_business_hours?(time) || !time.workday?(options))
                                Time.end_of_workday(time - 1.day)
                              elsif Time.after_business_hours?(time)
@@ -140,6 +154,10 @@ module BusinessTime
     end
 
     def business_time_until(to_time, options={})
+      if (calendar = options[:work_calendar])
+        return calendar.business_time_until(self, to_time)
+      end
+
       # Make sure that we will calculate time from A to B "clockwise"
       if self < to_time
         time_a = self
@@ -170,6 +188,10 @@ module BusinessTime
     end
 
     def during_business_hours?(options={})
+      if (calendar = options[:work_calendar])
+        return calendar.during_work_hours?(self)
+      end
+
       self.workday?(options) && self.to_i.between?(Time.beginning_of_workday(self).to_i, Time.end_of_workday(self).to_i)
     end
 
